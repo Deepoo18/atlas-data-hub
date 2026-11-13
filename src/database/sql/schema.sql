@@ -29,3 +29,23 @@ CREATE INDEX idx_orders_customer_id
 
 CREATE INDEX idx_orders_order_date
     ON orders(order_date);
+
+CREATE TABLE staging_orders (
+    batch_id UUID NOT NULL,
+    order_id INT,
+    customer_id UUID,
+    product_name VARCHAR(100),
+    quantity INT,
+    order_date TIMESTAMPTZ,
+    unit_price NUMERIC(10, 2),
+    order_status VARCHAR(20),
+    loaded_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE ingestion_batches (
+    batch_id UUID PRIMARY KEY,
+    total_records INT NOT NULL,
+    batch_status VARCHAR(20) NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    error_message TEXT
+);

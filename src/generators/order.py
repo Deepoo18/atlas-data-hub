@@ -1,18 +1,23 @@
 from src.database.connection import get_connection
 from faker import Faker
-from dotenv import load_dotenv
+from typing import List, Dict, Any
 
-load_dotenv()
-
-def generate_order(num_orders):
+def generate_order(num_orders)->List[Dict[str,Any]]:
+    orders = []
     conn = get_connection()
-
     cursor = conn.cursor()
     fake = Faker()
+
     cursor.execute("SELECT customer_id FROM customers")
     customer_ids = [row[0] for row in cursor.fetchall()]
-    for _ in range(num_orders):
-        order_id = fake.random_number(digits=5)  # Generate a unique order ID
+    cursor.execute("select order_id from orders")
+    order_ids = [row[0] for row in cursor.fetchall()]
+
+
+    for i in range(num_orders):
+        order_id = i+10000
+        if order_id in order_ids:
+            order_id = fake.random_number(digits=5)  # Generate a new order_id if it already exists
         customer_id = fake.random_element(elements=customer_ids)
         product_name = fake.word()  # Generate a unique product name
         quantity = fake.random_int(min=1, max=10)
@@ -20,17 +25,17 @@ def generate_order(num_orders):
         
         unit_price = round(fake.random_number(digits=6), 2)  # Generate a random unit price
         order_status = fake.random_element(elements=('PENDING', 'PAID', 'CANCELLED', 'REFUNDED'))  # Random order status
-        try:
-            cursor.execute("INSERT INTO orders (order_id, customer_id, order_date, product_name, unit_price, quantity, order_status) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                           (order_id, customer_id, order_date, product_name, unit_price, quantity, order_status))
-        except Exception as e:
-            conn.rollback()  # Rollback the transaction in case of an error
-            print(f"Error occurred while inserting order: {e}")
+        order = {
+            "order_id": order_id,
+            "customer_id": customer_id,
+            "product_name": product_name,
+            "quantity": quantity,
+            "order_date": order_date,
+            "unit_price": unit_price,
+            "order_status": order_status
+        }
+        orders.append(order)
 
-    conn.commit()
     cursor.close()
     conn.close()
-
-if __name__ == "__main__":
-    num_orders = 4415  # Specify the number of orders to generate
-    generate_order(num_orders)  # Specify the number of orders to generate
+    return orders
